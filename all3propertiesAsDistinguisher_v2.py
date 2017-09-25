@@ -17,10 +17,10 @@ S=int(sys.argv[3])
 E=int(sys.argv[4])
 SetNumOfL1 = int(sys.argv[5])
 counter=int(sys.argv[6])
+
 increment = 1
 numProfiles = 1
 base = 0
-
 
 KeyRelated_ByteValue = 0	#Dont know
 count = 1 #for ranking a group...counts the position
@@ -230,12 +230,12 @@ for power in range(start, end+1, increment):
 
     print power-32, 
     fd = open('avgRank_variation','a')
-    print >> fd,sum(avgsRanksPerBytePerLUT)/4 # Take sum of ranks of all 4 bytes together....to reperesnet that ets/profiles property
+    print >> fd,sum(avgsRanksPerBytePerLUT)/4 # Take sum of ranks of all 4 bytes together....to reperesnet that sets/profiles property
     fd.close()	      
    
     
     fd1 = open('Testing','a')
-    
+
     if(counter == 1) :
         print >> fd1
         print >> fd1, "SetNumOfL1 = ", SetNumOfL1
@@ -247,7 +247,7 @@ for power in range(start, end+1, increment):
     print >> fd1, ' E=',
     print >> fd1, E,
 
-    if(sum(avgsRanksPerBytePerLUT)/4 < 2) :
+    if(sum(avgsRanksPerBytePerLUT)/4 < 3) :
 	print 'Y',
 	print avgsRanksPerBytePerLUT
 	print
@@ -261,13 +261,11 @@ for power in range(start, end+1, increment):
         print >> fd1,' N',
 	print >> fd1,avgsRanksPerBytePerLUT,
 	print >> fd1,sum(avgsRanksPerBytePerLUT)/4
-    	
-
 	
 	
     #print >> fd,sum(avgsRanksPerBytePerLUT)/4 # Take sum of ranks of all 4 bytes together....to reperesnet that sets/profiles property
    
-       # print >> fd,'------------------------------------------------------------------------------------------'
+        #print >> fd,'------------------------------------------------------------------------------------------'
     fd1.close()	      
 
     

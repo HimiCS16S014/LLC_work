@@ -60,7 +60,7 @@ volatile int startSlice; //min value is 0
 volatile int endSlice; //max value 7
 bool runSpy=true;
 
-pthread_t aes,spy;
+pthread_t aes,spy, spy1,spy2;
 int learningFlag=0;
 int fileNameSuffix;
 int thresholdForEnc16 = 30;
@@ -149,7 +149,8 @@ void *spyThreadL1(void*)
 {
     cpu_set_t set;
     CPU_ZERO(&set);
-    CPU_SET(4, &set);	//core shoudl be same as that of AES, if AES on 0, it should be on 4
+    CPU_SET(7, &set);	//core shoudl be same as that of AES, if AES on 1, it should be on 5
+   // CPU_SET(4, &set);	//core shoudl be same as that of AES, if AES on 0, it should be on 4
     if(sched_setaffinity(0, sizeof(set), &set) < 0)
     {
       perror("affinity error...");
@@ -188,7 +189,8 @@ void *spyThread(void*)
 {
 	cpu_set_t set;
 	CPU_ZERO(&set);
-	CPU_SET(2, &set);
+	CPU_SET(6, &set);  //  or CPU_SET(6, &set);
+	//CPU_SET(7, &set); // or CPU_SET(3, &set);
 	if(sched_setaffinity(0, sizeof(set), &set) < 0)
 	{
 	  perror("affinity error...");
@@ -220,8 +222,85 @@ void createSPY_LLCThreadAndRun()
 	      exit(-1);
 	}
 }
+//-------------------------------------------------------
+void *spyThread1(void*)
+{
+	cpu_set_t set;
+	CPU_ZERO(&set);
+	CPU_SET(4, &set);  //  or CPU_SET(6, &set);
+	//CPU_SET(7, &set); // or CPU_SET(3, &set);
+	if(sched_setaffinity(0, sizeof(set), &set) < 0)
+	{
+	  perror("affinity error...");
+	}
+	while(runSpy)
+	{
+	  for(int MSB5bitsOfSetIndex=startTag; MSB5bitsOfSetIndex <= endTag; MSB5bitsOfSetIndex++ )
+	  {	          
+	      for(int slice=startSlice;slice<=endSlice;slice++)
+	      {
+		  for(int line=0; line<num_ways; line++)
+		  {
+		      *(unsigned int*)(evictionSetForAllSlices[slice][line] + ( ( (MSB5bitsOfSetIndex<<6) | setNumberOfL1) * 64) ) = 1;		  
+		      *(unsigned int*)(evictionSetForAllSlices[slice][line] + ( ( (MSB5bitsOfSetIndex<<6) | setNumberOfL1) * 64) ) += 2;						    
+		  }		
+	      }
+	  }
+	}      
+  
+}
 
+void createSPY_LLCThreadAndRun1()
+{
+    	int rc ;
+	void *status;
+	rc = pthread_create(&spy1, NULL, spyThread1, NULL);
+	if (rc){
+	      printf( "Error:unable to create thread SPY,%d", rc );
+	      exit(-1);
+	}
+}
+//-----------------------------
 
+//-------------------------------------------------------
+void *spyThread2(void*)
+{
+	cpu_set_t set;
+	CPU_ZERO(&set);
+	CPU_SET(5, &set);  //  or CPU_SET(6, &set);
+	//CPU_SET(7, &set); // or CPU_SET(3, &set);
+	if(sched_setaffinity(0, sizeof(set), &set) < 0)
+	{
+	  perror("affinity error...");
+	}
+	while(runSpy)
+	{
+	  for(int MSB5bitsOfSetIndex=startTag; MSB5bitsOfSetIndex <= endTag; MSB5bitsOfSetIndex++ )
+	  {	          
+	      for(int slice=startSlice;slice<=endSlice;slice++)
+	      {
+		  for(int line=0; line<num_ways; line++)
+		  {
+		      *(unsigned int*)(evictionSetForAllSlices[slice][line] + ( ( (MSB5bitsOfSetIndex<<6) | setNumberOfL1) * 64) ) = 1;		  
+		      *(unsigned int*)(evictionSetForAllSlices[slice][line] + ( ( (MSB5bitsOfSetIndex<<6) | setNumberOfL1) * 64) ) += 2;						    
+		  }		
+	      }
+	  }
+	}      
+  
+}
+
+void createSPY_LLCThreadAndRun2()
+{
+    	int rc ;
+	void *status;
+	rc = pthread_create(&spy2, NULL, spyThread2, NULL);
+	if (rc){
+	      printf( "Error:unable to create thread SPY,%d", rc );
+	      exit(-1);
+	}
+}
+//-----------------------------
 
 void joinSPY_LLCWithMainThread()
 {
@@ -337,6 +416,8 @@ int main(int argc, char** argv)
     void *status;
     //--------1. CREATE SPY---------
     createSPY_LLCThreadAndRun();
+    createSPY_LLCThreadAndRun1();
+    createSPY_LLCThreadAndRun2();
     pid=std::stoi(exec("pgrep main"));
     startSlice = 0;
     endSlice =3;
@@ -345,15 +426,44 @@ int main(int argc, char** argv)
     float Entropies[32];
     system("rm avgRank_variation");
    // FILE *fnew=fopen("Testing","a");	
-  /*    for(int q=0; q<64; q++)
-      {    
-	for(int set=0;set<32;set++)
+  /*  for(int set=0;set<32;set++)
+    {      
+      startTag = endTag = set;
+                
+     // fprintf (fnew, “s= %d   e= %d”, startTag, endTag);
+      //printf("startTag %d , endtag %d :", startTag, endTag);
+      char cmd[50];
+	
+      
+      for(int k=1;k<=4;k++)
+      {
+	kill(pid, SIGUSR1);
+	while(!received); 
+	received = 0;
+	//sprintf(cmd,"cp ./DataFiles/deviationprofile1_17.txt %d_%d",set,k);
+	sprintf(cmd,"cp ./DataFiles/deviationprofile1_%d.txt %d_%d",expo,set,k);
+	system(cmd);	
+      }
+    //sprintf(cmd,"python groupSumAsDistinguisher.py %d %d",set,set);
+    sprintf(cmd,"python all3propertiesAsDistinguisher_v2.py %d %d %d %d", startTag, endTag, startTag, endTag);
+      system(cmd);	              
+      
+    } */ 
+	
+//--------------for storing files------------------------------
+  /*for(int q=0; q<64; q++)
+  {	
+      for(int p=1; p<=length; p++)
+      {
+      for(int set=0;set<32;set=set +length)
 	  {      
-	    startTag = endTag = set;
-		      
-	  // fprintf (fnew, “s= %d   e= %d”, startTag, endTag);
-	    //printf("startTag %d , endtag %d :", startTag, endTag);
-	    char cmd[50];
+	      startTag = set;
+	      if(startTag+length-1<32)
+		      endTag = startTag+length-1;
+	      else
+		      endTag=31;
+	  // printf("startTag %d , endtag %d :", startTag, endTag);
+	    char cmd[100];
 	      
 	    
 	    for(int k=1;k<=4;k++)
@@ -362,106 +472,102 @@ int main(int argc, char** argv)
 	      while(!received); 
 	      received = 0;
 	      //sprintf(cmd,"cp ./DataFiles/deviationprofile1_17.txt %d_%d",set,k);
-	      sprintf(cmd,"cp ./DataFiles/deviationprofile1_%d.txt %d_%d",expo,set,k);
+	      sprintf(cmd,"cp ./DataFiles/deviationprofile1_%d.txt %d_%d",expo,set+32,k);
+	      system(cmd);	
+	      sprintf(cmd,"cp %d_%d ./Deviation_profiles_%d_%d/%d_%d" ,set+32,k,expo,length,length,k+(4*i_count));
+	      system(cmd);
+	      sprintf(cmd,"cp ./TimingFiles/deviationprofile1_%d.txt ./Timing_profiles_%d_%d/%d_%d",expo,expo,length,length,k+(4*i_count));
 	      system(cmd);	
 	    }
+	      i_count+=1;
 	  //sprintf(cmd,"python groupSumAsDistinguisher.py %d %d",set,set);
-	  sprintf(cmd,"python all3propertiesAsDistinguisher_v2.py %d %d %d %d", set, set, startTag, endTag);
+	  sprintf(cmd,"python all3propertiesAsDistinguisher_v2.py %d %d %d %d",set+32,set+32,startTag, endTag);
 	    system(cmd);	              
 	    
-	  }   
-	  if(setNumberOfL1< 63)
-	  {
+	  }  
+      }
+      if(setNumberOfL1<63)
+	{ 
 	  setNumberOfL1++;
-	  printf("\n\n\n Started Evicting setNumberOfL1  %d \n", setNumberOfL1);
-	  
-	  }
-      }*/
-
-
-
-	//fclose(fnew);
-//--------------for storing files------------------------------
- tic =high_resolution_clock::now();
-  while(length<2)
-    {	 int x;
-	for(int q=0; q<64; q++)
-	  {  
-	      float y;
-	      y=(ceil((float)32/(float)length));
-	    //  for(int p=1; p<=length; p++)
-	      {
-	      for(int set=0;set<32;set=set +length)
-		  {      
-		      startTag = set;
-		      if(startTag+length-1<32)
-			      endTag = startTag+length-1;
-		      else
-			      endTag=31;
-		  // printf("startTag %d , endtag %d :", startTag, endTag);
-		    char cmd[100];
-		      
+	  printf(" \n Started Evicting   %d \n", setNumberOfL1);
+	  printf("\n");
+	}
+      
+   }*/
+//----------------------------------------------------------------------
+    tic =high_resolution_clock::now();
+    while(length<2)
+    {	 
+      int x;
+      for(int q=0; q<64; q++)
+	{   
+	    float y;
+	    y=(ceil((float)32/(float)length))*length;
+	   // for(int p=1; p<=length; p++)
+	    {
+	    for(int set=0;set<32;set=set +length)
+		{      
+		    startTag = set;
+		    if(startTag+length-1<32)
+			    endTag = startTag+length-1;
+		    else
+			    endTag=31;
+		// printf("startTag %d , endtag %d :", startTag, endTag);
+		  char cmd[100];
 		    
-		    for(int k=1;k<=4;k++)
-		    {
-		      kill(pid, SIGUSR1);
-		      while(!received); 
-		      received = 0;
-		      //sprintf(cmd,"cp ./DataFiles/deviationprofile1_17.txt %d_%d",set,k);
-		      sprintf(cmd,"cp ./DataFiles/deviationprofile1_%d.txt %d_%d",expo,set+32,k);
-		      system(cmd);	
-		      sprintf(cmd,"cp %d_%d ./Deviation_profiles_%d_%d/%d_%d" ,set+32,k,expo,length,length,k+(4*i_count));
+		  
+		  for(int k=1;k<=4;k++)
+		  {
+		    kill(pid, SIGUSR1);
+		    while(!received); 
+		    received = 0;
+		    //sprintf(cmd,"cp ./DataFiles/deviationprofile1_17.txt %d_%d",set,k);
+		    sprintf(cmd,"cp ./DataFiles/deviationprofile1_%d.txt %d_%d",expo,set+32,k);
+		    system(cmd);	
+		    sprintf(cmd,"cp %d_%d ./Deviation_profiles_%d_%d/%d_%d" ,set+32,k,expo,length,length,k+(4*i_count));
+		    system(cmd);
+		    sprintf(cmd,"cp ./TimingFiles/deviationprofile1_%d.txt ./Timing_profiles_%d_%d/%d_%d",expo,expo,length,length,k+(4*i_count));
+		    system(cmd);	
+		  }
+		    i_count+=1;
+		//sprintf(cmd,"python groupSumAsDistinguisher.py %d %d",set,set);
+		  if(x%(int)y==0)
+		  {
+		      sprintf(cmd,"python all3propertiesAsDistinguisher_v2.py %d %d %d %d %d %d",set+32,set+32,startTag, endTag, x/(int)y,1);
 		      system(cmd);
-		      sprintf(cmd,"cp ./TimingFiles/deviationprofile1_%d.txt ./Timing_profiles_%d_%d/%d_%d",expo,expo,length,length,k+(4*i_count));
-		      system(cmd);	
-		    }
-		      i_count+=1;
-		  //sprintf(cmd,"python groupSumAsDistinguisher.py %d %d",set,set);
-		    if(x%(int)y==0)
+		  }
+		  else
+		  {
+		    
 		    {
-			sprintf(cmd,"python all3propertiesAsDistinguisher_v2.py %d %d %d %d %d %d",set+32,set+32,startTag, endTag, x/(int)y,1);
+			sprintf(cmd,"python all3propertiesAsDistinguisher_v2.py %d %d %d %d %d %d",set+32,set+32,startTag, endTag, x/(int)y,0);
 			system(cmd);
 		    }
-		    else
-		    {
-			  sprintf(cmd,"python all3propertiesAsDistinguisher_v2.py %d %d %d %d %d %d",set+32,set+32,startTag, endTag, x/(int)y,0);
-			  system(cmd);
-			      
-		    } x++;
+		    
+		  } x++;
+		    
 		      
-			
-		  }  
+		}  
+	    }
+	    if(setNumberOfL1<63)
+	      { 
+		setNumberOfL1++;
+		printf(" \n Started Evicting  %d \n", setNumberOfL1);
+		printf("\n");
 	      }
-	      if(setNumberOfL1<63)
-		{ 
-		  setNumberOfL1++;
-		  printf(" \n Started SPYINGGG (evicting) :P  %d \n", setNumberOfL1);
-		  printf("\n");
-		}
-	      
-	  }
+	    
+	}
 	  setNumberOfL1=0;
 	  length++;
 	  x=0;
 	  printf("\nFor length= %d\n", length);
-	  printf(" \n Started Evicting %d \n", setNumberOfL1);
+	  printf(" \n Started SPYINGGG (evicting) :P  %d \n", setNumberOfL1);
+
     }
-    
-    toc =high_resolution_clock::now();
+	  toc =high_resolution_clock::now();
 	  toe =std::chrono::duration_cast<std::chrono::seconds>(toc-tic).count();
 	  printf("Total time is %lld", toe);
     exit(0);
-//----------------------------------------------------------------------  
-    
-    //printf("\nNow let me process all the profiling files...to find out the best set....\n\n");    
-    
-  //kill(pid, SIGTERM); 
-  //runSpy=false;
-//-----------------------------------------------------------------------
-//rename(Testing, )
-
-
-
 //-----------------------------------------------------------------------
   joinSPY_LLCWithMainThread();
   
