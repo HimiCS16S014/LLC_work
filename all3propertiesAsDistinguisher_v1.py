@@ -13,14 +13,9 @@ import operator
 
 start = int(sys.argv[1])	#How many files u want to process...start file=0
 end = int(sys.argv[2])		#end file= 31 or something else...	
-S=int(sys.argv[3])
-E=int(sys.argv[4])
-SetNumOfL1 = int(sys.argv[5])
-counter=int(sys.argv[6])
 increment = 1
 numProfiles = 1
 base = 0
-
 
 KeyRelated_ByteValue = 0	#Dont know
 count = 1 #for ranking a group...counts the position
@@ -228,47 +223,20 @@ for power in range(start, end+1, increment):
 	    #print '>  ',	    
 	    indexIntoAvg += 1	#incremented for each byte related to a LUT; 4 bytes realted to each LUT; Index0-> byte0   Index1->byte4   Index2->byte8   Index3->byte12
 
-    print power-32, 
+   # print power, 
     fd = open('avgRank_variation','a')
-    print >> fd,sum(avgsRanksPerBytePerLUT)/4 # Take sum of ranks of all 4 bytes together....to reperesnet that ets/profiles property
+    print >> fd,sum(avgsRanksPerBytePerLUT)/4 # Take sum of ranks of all 4 bytes together....to reperesnet that sets/profiles property
     fd.close()	      
    
-    
-    fd1 = open('Testing','a')
-    fd2 = open('Y_or_N','w')
-    
-    if(counter == 1) :
-        print >> fd1
-        print >> fd1, "SetNumOfL1 = ", SetNumOfL1
-        print >> fd1
-   
-    print >> fd1, power-32, 
-    print >> fd1, ' S=',
-    print >> fd1, S,
-    print >> fd1, ' E=',
-    print >> fd1, E,
-
-    if(sum(avgsRanksPerBytePerLUT)/4 < 2) :
-	print 'Y',
+    if(sum(avgsRanksPerBytePerLUT)/4 < 2.5) :
+	print 'Yep',
 	print avgsRanksPerBytePerLUT
 	print
-	print >> fd1,' Y',
-	print >> fd1,avgsRanksPerBytePerLUT,
-	print >> fd1,sum(avgsRanksPerBytePerLUT)/4
-	print >> fd2,'Y'
+	break
     else :
-        print 'N',
+        print 'Nope',
 	print avgsRanksPerBytePerLUT,
-        print >> fd1,' N',
-	print >> fd1,avgsRanksPerBytePerLUT,
-	print >> fd1,sum(avgsRanksPerBytePerLUT)/4
-    #print >> fd2,'N'	
+	break
 
-	
-	
-    #print >> fd,sum(avgsRanksPerBytePerLUT)/4 # Take sum of ranks of all 4 bytes together....to reperesnet that sets/profiles property
-   
-       # print >> fd,'------------------------------------------------------------------------------------------'
-    fd1.close()	      
-
+ 
     

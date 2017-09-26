@@ -1,5 +1,5 @@
 //Author: @ D Anthony Balaraju 	
-//						Edited On: Apr 2, 2016 
+//						Edited On: Apr 2, 2017 
 
 //g++ --static main.cc aes_1024.c -o main -std=c++11;clear;./main
 
@@ -44,7 +44,7 @@ void callAES()
       char  proNum[4];
       sprintf(proNum, "%d",j);
      // char* argv[] = { "AESProfiles", "0", startPower ,endpower, "deviationprofile", &proNum[0], NULL};
-      char* argv[] = { "AESProfiles", "3", &spower[0] ,&epower[0], "deviationprofile", &proNum[0], NULL };
+      char* argv[] = { "AESProfiles", "0", &spower[0] ,&epower[0], "deviationprofile", &proNum[0], NULL };
       //char* argv[] = { "AESProfiles", "0", "18" ,"18", "deviationprofile", &proNum[0], NULL };
       //char* argv[] = { "dummyName", &arg0[0], &arg1[0], &arg2[0], &arg3[0], &arg4[0], NULL };
       int   argc   = (int)(sizeof(argv) / sizeof(argv[0])) - 1;
@@ -72,8 +72,8 @@ void callPythonToEvaluate()
 
 void myhandler(int signum)
 {
- startPower=19;
- endpower=19;
+ startPower=18;
+ endpower=18;
   //change2:
   callAES();
   kill(pid, SIGUSR1);    
@@ -83,8 +83,8 @@ void myhandler2(int signum)
 {
   //print_tableAddresses();
  // printf("\n");
-  startPower=19;
- endpower=19;
+  startPower=18;
+ endpower=18;
   //change3:
   callAES();
   callPythonToEvaluate();
